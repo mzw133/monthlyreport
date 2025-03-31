@@ -1,0 +1,103 @@
+@import url('https://rsms.me/inter/inter.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-card transition-all duration-300 hover:shadow-card-hover;
+  }
+
+  .metric-value {
+    @apply text-3xl font-semibold text-neutral-900 tracking-tight;
+  }
+
+  .metric-label {
+    @apply text-sm font-medium text-neutral-500;
+  }
+
+  .metric-change {
+    @apply text-sm font-medium flex items-center gap-1 transition-colors duration-200;
+  }
+
+  .metric-change-positive {
+    @apply text-success-500;
+  }
+
+  .metric-change-negative {
+    @apply text-danger-500;
+  }
+
+  .button-primary {
+    @apply inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-full
+      text-white bg-primary-500 shadow-button transition-all duration-200
+      hover:bg-primary-600 hover:shadow-button-hover
+      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  .button-secondary {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-full
+      text-neutral-700 bg-neutral-100 shadow-button transition-all duration-200
+      hover:bg-neutral-200 hover:shadow-button-hover
+      focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2;
+  }
+
+  .select-input {
+    @apply pl-3 pr-10 py-2 text-sm font-medium rounded-xl border-neutral-200
+      text-neutral-900 bg-white shadow-button transition-all duration-200
+      hover:border-neutral-300 hover:shadow-button-hover
+      focus:border-primary-500 focus:ring-2 focus:ring-primary-500;
+  }
+
+  .table-container {
+    @apply bg-white rounded-xl shadow-card overflow-hidden;
+  }
+
+  .table-header {
+    @apply bg-neutral-50 px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm text-neutral-900 border-b border-neutral-100 last:border-b-0;
+  }
+
+  .table-row {
+    @apply transition-colors duration-200 hover:bg-neutral-50;
+  }
+
+  .chart-container {
+    @apply bg-white rounded-xl shadow-card p-6 h-80;
+  }
+
+  .expandable-content {
+    @apply mt-6 bg-neutral-50 rounded-xl p-6 animate-fade-in;
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+} 
