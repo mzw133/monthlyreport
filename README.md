@@ -1,17 +1,17 @@
-# KURABU Mitgliederbericht Dashboard
+# KURABU Member Metrics Dashboard
 
-Ein modernes Dashboard zur Visualisierung und Analyse von Mitgliederdaten für KURABU.
+A modern dashboard for visualizing and analyzing member data for KURABU.
 
 ## Features
 
-- 📊 Interaktive Visualisierungen von Mitgliederdaten
-- 📈 Detaillierte Metriken und Statistiken
-- 📅 Flexible Datumsauswahl (Einzelmonat oder Zeitraum)
-- 🖨️ Druckfunktion für Berichte
-- 📱 Responsive Design für alle Geräte
-- 🎨 Modernes UI mit Tailwind CSS
+- 📊 Interactive member data visualizations
+- 📈 Detailed metrics and statistics
+- 📅 Flexible date selection (single month or date range)
+- 🖨️ Print functionality for reports
+- 📱 Responsive design for all devices
+- 🎨 Modern UI with Tailwind CSS
 
-## Technologie-Stack
+## Technology Stack
 
 - React.js
 - Vite
@@ -21,48 +21,48 @@ Ein modernes Dashboard zur Visualisierung und Analyse von Mitgliederdaten für K
 
 ## Installation
 
-1. Repository klonen:
+1. Clone the repository:
 ```bash
 git clone https://github.com/mzw133/monthlyreport.git
 cd monthlyreport
 ```
 
-2. Abhängigkeiten installieren:
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Entwicklungsserver starten:
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-Die Anwendung ist dann unter `http://localhost:5173` erreichbar.
+The application will be available at `http://localhost:5173`.
 
-## Verwendung
+## Usage
 
-1. Öffnen Sie die Anwendung im Browser
-2. Wählen Sie einen Zeitraum für die Analyse
-3. Laden Sie Ihre Mitgliederdaten hoch
-4. Erkunden Sie die verschiedenen Metriken und Visualisierungen
-5. Nutzen Sie die Druckfunktion für Berichte
+1. Open the application in your browser
+2. Select a time period for analysis
+3. Upload your member data
+4. Explore various metrics and visualizations
+5. Use the print function for reports
 
-## Projektstruktur
+## Project Structure
 
 ```
 monthlyreport/
 ├── src/
-│   ├── components/     # React Komponenten
-│   ├── App.jsx        # Hauptanwendung
-│   └── main.jsx       # Einstiegspunkt
-├── public/            # Statische Assets
-└── package.json       # Projektabhängigkeiten
+│   ├── components/     # React Components
+│   ├── App.jsx        # Main Application
+│   └── main.jsx       # Entry Point
+├── public/            # Static Assets
+└── package.json       # Project Dependencies
 ```
 
-## Lizenz
+## License
 
-Alle Rechte vorbehalten. Dieses Projekt ist proprietär und nicht für die öffentliche Nutzung bestimmt.
+All rights reserved. This project is proprietary and not intended for public use.
 
-## Kontakt
+## Contact
 
-Bei Fragen oder Anregungen wenden Sie sich bitte an das KURABU-Team. 
+For questions or suggestions, please contact the KURABU team. 
