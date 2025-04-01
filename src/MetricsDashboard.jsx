@@ -18,11 +18,9 @@ import {
   AreaChart
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { HiOutlineUpload, HiChevronDown, HiOutlineChartBar, HiOutlineUsers, HiChevronLeft, HiChevronRight, HiOutlineDocumentDownload } from "react-icons/hi";
+import { HiOutlineUpload, HiChevronDown, HiOutlineChartBar, HiOutlineUsers, HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import "rc-slider/assets/index.css";
 import { sampleData } from "./test-data";
-import { pdf } from '@react-pdf/renderer';
-import MetricsReport from './components/MetricsReport';
 
 ////////////////////////////////////////////////////////
 // EXACT GERMAN -> ENGLISH MAPPING
@@ -45,10 +43,15 @@ const METRIC_NAME_MAP = {
   // 4) Plans
   "Mitglieder pro Beitrag am Ende des Monats": "Members per plan at the end of the month",
 
-  // 5) Total Claim
+  // 5) Total Claim - EXACT MATCHES
   "Gesamtforderung pro Monat": "Total claim per month",
   "...davon aus Buchungsrechnungen": "...of that from booking invoices",
   "...davon sind Nicht-Mitglieder": "...of which are non members",
+
+  // Reverse mapping for English input
+  "Total claim per month": "Gesamtforderung pro Monat",
+  "...of that from booking invoices": "...davon aus Buchungsrechnungen",
+  "...of which are non members": "...davon sind Nicht-Mitglieder",
 
   // 6) Extra line from your screenshot
   "Erwartete Beitragseinnahmen in den nächsten 12 Monaten":
@@ -89,7 +92,7 @@ const ALWAYS_SHOW_METRICS = [
   "...of which added manually",
   "Category members at the end of the month",
   "Members per plan at the end of the month",
-  "Total claim per month",
+  "Total claim per month"
 ];
 
 // The top 4 summary
@@ -137,6 +140,7 @@ const MonthSelector = ({ startMonth, endMonth, onRangeChange, allMonths }) => {
 
   const handleMonthChange = (month) => {
     onRangeChange(month, month);
+    setIsOpen(false);
   };
 
   const handleStartMonthChange = (month) => {
@@ -159,20 +163,10 @@ const MonthSelector = ({ startMonth, endMonth, onRangeChange, allMonths }) => {
     }
   };
 
-  const toggleRangeMode = () => {
-    setIsRangeMode(!isRangeMode);
-    if (!isRangeMode) {
-      // When switching to range mode, set end month to start month
-      onRangeChange(startMonth, startMonth);
-    }
-  };
-
-  const lastValidMonthIndex = allMonths.length - 2; // Ignore last month
-
   return (
     <div className="relative">
       <motion.div
-        className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2"
+        className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2 cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="text-gray-900 font-medium px-2">
@@ -192,30 +186,49 @@ const MonthSelector = ({ startMonth, endMonth, onRangeChange, allMonths }) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-gray-700">Zeitraum auswählen</label>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleRangeMode();
-                }}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  isRangeMode 
-                    ? 'bg-primary-100 text-primary-700' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {isRangeMode ? 'Einzelmonat' : 'Zeitraum'}
-              </button>
+              <div className="flex rounded-lg overflow-hidden border border-gray-200">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRangeMode(false);
+                    handleMonthChange(endMonth);
+                  }}
+                  className={`px-4 py-1.5 text-sm font-medium transition-colors ${
+                    !isRangeMode
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Einzelmonat
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRangeMode(true);
+                  }}
+                  className={`px-4 py-1.5 text-sm font-medium transition-colors ${
+                    isRangeMode
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Zeitraum
+                </button>
+              </div>
             </div>
 
             {!isRangeMode ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Monat</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Monat
+                </label>
                 <select
-                  value={startMonth}
+                  value={endMonth}
                   onChange={(e) => handleMonthChange(e.target.value)}
                   className="w-full rounded-md border border-gray-300 p-2"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {allMonths.slice(0, lastValidMonthIndex + 1).map(month => (
+                  {allMonths.slice(0, -1).map(month => (
                     <option key={month} value={month}>{month}</option>
                   ))}
                 </select>
@@ -223,27 +236,36 @@ const MonthSelector = ({ startMonth, endMonth, onRangeChange, allMonths }) => {
             ) : (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Startmonat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Von
+                  </label>
                   <select
                     value={startMonth}
                     onChange={(e) => handleStartMonthChange(e.target.value)}
                     className="w-full rounded-md border border-gray-300 p-2"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {allMonths.slice(0, lastValidMonthIndex + 1).map(month => (
+                    {allMonths.slice(0, -1).map(month => (
                       <option key={month} value={month}>{month}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Endmonat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bis
+                  </label>
                   <select
                     value={endMonth}
                     onChange={(e) => handleEndMonthChange(e.target.value)}
                     className="w-full rounded-md border border-gray-300 p-2"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {allMonths.slice(0, lastValidMonthIndex + 1).map(month => (
-                      <option key={month} value={month}>{month}</option>
-                    ))}
+                    {allMonths
+                      .slice(0, -1)
+                      .filter(month => allMonths.indexOf(month) >= allMonths.indexOf(startMonth))
+                      .map(month => (
+                        <option key={month} value={month}>{month}</option>
+                      ))}
                   </select>
                 </div>
               </>
@@ -280,45 +302,6 @@ export default function MetricsDashboard({ initialData, onReset }) {
     }));
   };
 
-  const handleGenerateReport = async () => {
-    try {
-      setError("");
-      if (!data.length || !startMonth || !endMonth) {
-        setError("Bitte laden Sie zuerst Daten hoch und wählen Sie einen Monat aus.");
-        return;
-      }
-
-      console.log('Starting PDF generation with data:', { data, startMonth, endMonth });
-
-      // Create the PDF blob
-      const pdfDoc = (
-        <MetricsReport
-          data={data}
-          startMonth={startMonth}
-          endMonth={endMonth}
-        />
-      );
-      
-      console.log('PDF Document created, generating blob...');
-      const blob = await pdf(pdfDoc).toBlob();
-      console.log('PDF blob generated successfully');
-
-      // Create a download link and trigger the download
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Mitglieder-Metriken-${startMonth}-${endMonth}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      console.log('PDF download triggered');
-    } catch (error) {
-      console.error('Detailed error in PDF generation:', error);
-      setError(`Fehler beim Generieren des PDF-Reports: ${error.message}`);
-    }
-  };
-
   // Process initial data on mount
   useEffect(() => {
     if (initialData) {
@@ -329,18 +312,50 @@ export default function MetricsDashboard({ initialData, onReset }) {
       const metrics = rows
         .filter((row) => row[0])
         .map((row) => {
-          const rawMetricName = row[0].trim();
+          let rawMetricName = row[0].trim();
+          
+          // Special handling for total claims
+          if (rawMetricName === 'Gesamtforderung pro Monat') {
+            rawMetricName = 'Gesamtforderung pro Monat';
+          } else if (rawMetricName.startsWith('...davon aus Buchungsrechnungen')) {
+            rawMetricName = '...davon aus Buchungsrechnungen';
+          } else if (rawMetricName.startsWith('...davon sind Nicht-Mitglieder')) {
+            rawMetricName = '...davon sind Nicht-Mitglieder';
+          }
+
           const englishMetricName = METRIC_NAME_MAP[rawMetricName] || rawMetricName;
+          
+          console.log('Processing metric:', {
+            raw: rawMetricName,
+            english: englishMetricName,
+            values: row.slice(1)
+          });
 
           const obj = { metric: englishMetricName };
           for (let i = 1; i < headers.length; i++) {
             const monthLabel = headers[i];
             if (monthLabel) {
-              obj[monthLabel] = typeof row[i] === "number" ? row[i] : null;
+              // Convert string numbers to actual numbers
+              let value = row[i];
+              if (typeof value === 'string') {
+                // First remove any currency symbols and spaces
+                value = value.replace(/[€\s]/g, '');
+                // Convert German number format (1.234,56 -> 1234.56)
+                value = value.replace(/\./g, '').replace(',', '.');
+                value = parseFloat(value);
+              }
+              obj[monthLabel] = !isNaN(value) ? value : 0; // Changed null to 0 for calculations
             }
           }
           return obj;
         });
+
+      console.log('Processed metrics:', metrics);
+      console.log('Total claim metrics:', metrics.filter(m => 
+        m.metric === TOTAL_CLAIM_KEY || 
+        m.metric === CLAIM_INVOICES_KEY || 
+        m.metric === CLAIM_NON_MEMBERS_KEY
+      ));
 
       const dynamicMonths = headers.slice(1).filter(Boolean);
       setData(metrics);
@@ -991,24 +1006,19 @@ export default function MetricsDashboard({ initialData, onReset }) {
 
   function renderCategoryDetail(subRows) {
     const categories = subRows.map((row) => {
-      // Get current value (end of period)
       const curr = getValue(row, allMonths.indexOf(endMonth));
+      const prev = startMonth !== endMonth 
+        ? getValue(row, allMonths.indexOf(startMonth))
+        : getValue(row, allMonths.indexOf(startMonth) - 1);
       
-      // Only calculate diff and percent for range mode
-      let diff = 0;
-      let percent = null;
-      if (startMonth !== endMonth) {
-        const prev = getValue(row, allMonths.indexOf(startMonth));
-        diff = curr - prev;
-        percent = prev === 0 ? (diff > 0 ? 100 : 0) : ((diff / prev) * 100).toFixed(1);
-      }
+      const diff = curr - prev;
+      const percent = prev === 0 ? (diff > 0 ? 100 : 0) : ((diff / prev) * 100).toFixed(1);
       
       return {
         catName: row.metric,
         currentVal: curr,
         diff,
-        percent,
-        isRange: startMonth !== endMonth
+        percent: parseFloat(percent)
       };
     });
 
@@ -1017,10 +1027,10 @@ export default function MetricsDashboard({ initialData, onReset }) {
       .sort((a, b) => b.currentVal - a.currentVal)
       .slice(0, 10);
 
-    // Sort by change and get top 10 (only in range mode)
-    const topByChange = startMonth !== endMonth 
-      ? [...categories].sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff)).slice(0, 10)
-      : topBySize;
+    // Sort by absolute change and get top 10
+    const topByChange = [...categories]
+      .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+      .slice(0, 10);
 
     return (
       <div className="mt-4">
@@ -1032,43 +1042,28 @@ export default function MetricsDashboard({ initialData, onReset }) {
               {topBySize.map((cat, idx) => (
                 <div key={idx} className="flex items-center justify-between text-sm">
                   <span className="font-medium text-gray-900">{cat.catName}</span>
-                  <div className="flex items-center gap-2">
-                    <span>{cat.currentVal.toLocaleString()}</span>
-                    {cat.isRange && (
-                      <span
-                        className={`font-medium ${
-                          cat.diff >= 0 ? "text-success-500" : "text-danger-500"
-                        }`}
-                      >
-                        {cat.diff >= 0 ? "+" : ""}{cat.diff} ({cat.percent}%)
-                      </span>
-                    )}
-                  </div>
+                  <span>{cat.currentVal.toLocaleString()}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Top 10 by Change - Only shown in range mode */}
+          {/* Top 10 by Change */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-4">
-              {startMonth !== endMonth ? "Top 10 nach Veränderung" : "Top 10 nach Größe"}
-            </h3>
+            <h3 className="font-medium text-gray-900 mb-4">Top 10 Veränderung Total</h3>
             <div className="space-y-2">
               {topByChange.map((cat, idx) => (
                 <div key={idx} className="flex items-center justify-between text-sm">
                   <span className="font-medium text-gray-900">{cat.catName}</span>
                   <div className="flex items-center gap-2">
                     <span>{cat.currentVal.toLocaleString()}</span>
-                    {cat.isRange && (
-                      <span
-                        className={`font-medium ${
-                          cat.diff >= 0 ? "text-success-500" : "text-danger-500"
-                        }`}
-                      >
-                        {cat.diff >= 0 ? "+" : ""}{cat.diff} ({cat.percent}%)
-                      </span>
-                    )}
+                    <span
+                      className={`font-medium ${
+                        cat.diff >= 0 ? "text-success-500" : "text-danger-500"
+                      }`}
+                    >
+                      {cat.diff >= 0 ? "+" : ""}{cat.diff} ({cat.percent}%)
+                    </span>
                   </div>
                 </div>
               ))}
@@ -1191,21 +1186,56 @@ export default function MetricsDashboard({ initialData, onReset }) {
 
   //////////////////////////////////////////////////////////////////////
   // TOTAL CLAIM
-  function renderTotalClaimCard(mainRow) {
+  function renderTotalClaimCard() {
+    const totalRow = data.find((m) => m.metric === TOTAL_CLAIM_KEY);
     const invoiceRow = data.find((m) => m.metric === CLAIM_INVOICES_KEY);
     const nonMemberRow = data.find((m) => m.metric === CLAIM_NON_MEMBERS_KEY);
-    const hasSubRows = invoiceRow && nonMemberRow;
 
-    // Calculate current and previous values from the breakdown components
-    const currentInvoiceVal = getValue(invoiceRow, allMonths.indexOf(startMonth));
-    const currentNonMemberVal = getValue(nonMemberRow, allMonths.indexOf(startMonth));
-    const currentVal = currentInvoiceVal + currentNonMemberVal;
+    if (!totalRow || !invoiceRow || !nonMemberRow) return null;
 
-    const prevInvoiceVal = getValue(invoiceRow, allMonths.indexOf(startMonth) - 1);
-    const prevNonMemberVal = getValue(nonMemberRow, allMonths.indexOf(startMonth) - 1);
-    const prevVal = prevInvoiceVal + prevNonMemberVal;
+    // Get current values
+    const monthIdx = allMonths.indexOf(endMonth);
+    const currentTotal = getValue(totalRow, monthIdx);
+    const currentInvoice = getValue(invoiceRow, monthIdx);
+    const currentNonMember = getValue(nonMemberRow, monthIdx);
 
-    const { diff, percent } = difference(currentVal, prevVal);
+    // Get previous values for comparison
+    let prevTotal, prevInvoice, prevNonMember;
+    let comparisonText;
+    
+    if (startMonth === endMonth) {
+      // Single month mode - compare with previous month
+      prevTotal = getValue(totalRow, monthIdx - 1);
+      prevInvoice = getValue(invoiceRow, monthIdx - 1);
+      prevNonMember = getValue(nonMemberRow, monthIdx - 1);
+      comparisonText = 'vs. Vormonat';
+    } else {
+      // Range mode - compare with previous period of same length
+      const startIdx = allMonths.indexOf(startMonth);
+      const endIdx = allMonths.indexOf(endMonth);
+      const periodLength = endIdx - startIdx + 1;
+      const prevStartIdx = startIdx - periodLength;
+      const prevEndIdx = startIdx - 1;
+
+      if (prevStartIdx >= 0) {
+        // Calculate totals for previous period
+        prevTotal = getValue(totalRow, prevEndIdx);
+        prevInvoice = getValue(invoiceRow, prevEndIdx);
+        prevNonMember = getValue(nonMemberRow, prevEndIdx);
+        const prevPeriodStart = allMonths[prevStartIdx];
+        const prevPeriodEnd = allMonths[prevEndIdx];
+        comparisonText = `vs. ${prevPeriodStart} - ${prevPeriodEnd}`;
+      } else {
+        // Not enough historical data
+        prevTotal = null;
+        prevInvoice = null;
+        prevNonMember = null;
+        comparisonText = 'Vergleichszeitraum nicht verfügbar';
+      }
+    }
+
+    const diff = prevTotal !== null ? currentTotal - prevTotal : null;
+    const percent = (prevTotal !== null && prevTotal > 0) ? ((diff / prevTotal) * 100).toFixed(1) : null;
 
     const formatCurrency = (value) => 
       new Intl.NumberFormat('de-DE', { 
@@ -1215,14 +1245,32 @@ export default function MetricsDashboard({ initialData, onReset }) {
         maximumFractionDigits: 2 
       }).format(value);
 
-    const color = diff >= 0 ? "text-green-600" : "text-red-600";
-    const arrow = diff >= 0 ? "⬆" : "⬇";
+    // Prepare historical data
+    const chartData = allMonths.map(month => {
+      const monthIndex = allMonths.indexOf(month);
+      const total = getValue(totalRow, monthIndex);
+      const invoices = getValue(invoiceRow, monthIndex);
+      const nonMembers = getValue(nonMemberRow, monthIndex);
+      const others = total - invoices - nonMembers;
+      
+      return {
+        month,
+        invoices,
+        nonMembers,
+        others
+      };
+    }).filter(data => 
+      // Filter out months with no data and future months
+      data.invoices !== null && 
+      data.nonMembers !== null && 
+      allMonths.indexOf(data.month) <= allMonths.indexOf(endMonth)
+    );
 
     return (
       <div key="total-claim-main" className={`${cardClass} flex flex-col`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl text-gray-800 tracking-tight">
-            Total claim per month
+            {`Gesamtforderung ${startMonth === endMonth ? endMonth : `${startMonth} - ${endMonth}`}`}
           </h2>
           <button
             onClick={() => toggleSection('totalClaim')}
@@ -1234,242 +1282,135 @@ export default function MetricsDashboard({ initialData, onReset }) {
 
         <div className="flex flex-col">
           <div className="text-3xl font-extrabold text-gray-900">
-            {formatCurrency(currentVal)}
+            {formatCurrency(currentTotal)}
           </div>
           <div className="text-sm mt-1">
-            <span className={`font-medium ${color}`}>
-              {arrow} {Math.abs(percent)}% ({diff >= 0 ? "+" : ""}{formatCurrency(diff)}) vs. Vormonat
-            </span>
-          </div>
-        </div>
-
-        {hasSubRows && renderTotalClaimBreakdown(invoiceRow, nonMemberRow)}
-      </div>
-    );
-  }
-
-  function renderTotalClaimBreakdown(invoiceRow, nonMemberRow) {
-    const formatCurrency = (value) => 
-      new Intl.NumberFormat('de-DE', { 
-        style: 'currency', 
-        currency: 'EUR',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2 
-      }).format(value);
-
-    // Get last 12 months of data
-    const last12Months = allMonths.slice(-12);
-
-    // Calculate total values for each month
-    const chartData = last12Months
-      .filter(month => {
-        if (startMonth !== endMonth) {
-          const monthIdx = allMonths.indexOf(month);
-          const startIdx = allMonths.indexOf(startMonth);
-          const endIdx = allMonths.indexOf(endMonth);
-          return monthIdx >= startIdx && monthIdx <= endIdx;
-        }
-        return true;
-      })
-      .map((month, idx) => {
-        const monthIndex = allMonths.indexOf(month);
-        // Skip last month
-        if (monthIndex === allMonths.length - 1) {
-          return {
-            month: month,
-            total: null,
-            invoices: null,
-            nonMembers: null
-          };
-        }
-        const invoiceVal = getValue(invoiceRow, monthIndex);
-        const nonMemberVal = getValue(nonMemberRow, monthIndex);
-        return {
-          month: month,
-          total: invoiceVal + nonMemberVal,
-          invoices: invoiceVal,
-          nonMembers: nonMemberVal
-        };
-      }).filter(data => data.total !== null);
-
-    // Current month values for the bar chart
-    const currentInvoiceVal = getValue(invoiceRow, allMonths.indexOf(startMonth));
-    const currentNonMemberVal = getValue(nonMemberRow, allMonths.indexOf(startMonth));
-    const total = currentInvoiceVal + currentNonMemberVal;
-
-    const barData = [{
-      total: total,
-      invoices: currentInvoiceVal,
-      nonMembers: currentNonMemberVal,
-    }];
-
-    const COLORS = ["#007AFF", "#64748B"];
-
-    return (
-      <div className="space-y-8 mt-6">
-        {/* Horizontal Stacked Bar */}
-        <div className="h-16">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              layout="vertical"
-              data={barData}
-              margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-            >
-              <XAxis 
-                type="number"
-                tickFormatter={formatCurrency}
-                tick={{ fill: '#6B7280', fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis 
-                type="category" 
-                hide={true}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  borderRadius: "0.75rem",
-                  padding: "0.75rem 1rem",
-                  border: "none",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                }}
-                formatter={(value, name) => [
-                  formatCurrency(value),
-                  name === 'invoices' ? 'Buchungsrechnungen' : 'Nicht-Mitglieder'
-                ]}
-              />
-              <Bar dataKey="invoices" stackId="a" fill={COLORS[0]} radius={[4, 0, 0, 4]} />
-              <Bar dataKey="nonMembers" stackId="a" fill={COLORS[1]} radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-col space-y-2 text-sm">
-          <div className="flex items-center">
-            <div 
-              className="w-3 h-3 rounded-full mr-2" 
-              style={{ backgroundColor: COLORS[0] }}
-            />
-            <span className="text-gray-600">
-              Buchungsrechnungen: {formatCurrency(currentInvoiceVal)}
-              <span className="text-gray-400 ml-1">
-                ({((currentInvoiceVal / total) * 100).toFixed(1)}%)
+            {diff !== null ? (
+              <span className={`font-medium ${diff >= 0 ? 'text-success-500' : 'text-danger-500'}`}>
+                {diff >= 0 ? '⬆' : '⬇'} {Math.abs(percent)}% ({diff >= 0 ? '+' : ''}{formatCurrency(diff)}) {comparisonText}
               </span>
-            </span>
-          </div>
-          <div className="flex items-center">
-            <div 
-              className="w-3 h-3 rounded-full mr-2" 
-              style={{ backgroundColor: COLORS[1] }}
-            />
-            <span className="text-gray-600">
-              Nicht-Mitglieder: {formatCurrency(currentNonMemberVal)}
-              <span className="text-gray-400 ml-1">
-                ({((currentNonMemberVal / total) * 100).toFixed(1)}%)
-              </span>
-            </span>
+            ) : (
+              <span className="text-gray-500">{comparisonText}</span>
+            )}
           </div>
         </div>
 
-        {/* Historical Line Graph */}
         {expandedSections.totalClaim && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-8"
-          >
-            <h3 className="text-sm font-semibold text-neutral-900 mb-4">Historische Entwicklung</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 35 }}>
-                  <defs>
-                    <linearGradient id="colorInvoices" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#007AFF" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#007AFF" stopOpacity={0.1}/>
-                    </linearGradient>
-                    <linearGradient id="colorNonMembers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#64748B" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#64748B" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis 
-                    dataKey="month" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={60}
-                    interval={0}
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                    axisLine={{ stroke: '#E5E7EB' }}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    tickFormatter={formatCurrency}
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.95)",
-                      borderRadius: "0.75rem",
-                      padding: "0.75rem 1rem",
-                      border: "none",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                    }}
-                    formatter={(value, name) => [
-                      formatCurrency(value),
-                      name === 'invoices' ? 'Buchungsrechnungen' : 'Nicht-Mitglieder'
-                    ]}
-                  />
-                  <ReferenceLine 
-                    x={startMonth} 
-                    stroke="#007AFF" 
-                    strokeDasharray="3 3"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="invoices"
-                    stackId="1"
-                    stroke="#007AFF"
-                    strokeWidth={2}
-                    fill="url(#colorInvoices)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="nonMembers"
-                    stackId="1"
-                    stroke="#64748B"
-                    strokeWidth={2}
-                    fill="url(#colorNonMembers)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex justify-center gap-8 mt-4">
+          <div className="mt-6">
+            {/* Legend with current values */}
+            <div className="flex flex-col space-y-2 text-sm">
               <div className="flex items-center">
-                <div 
-                  className="w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: COLORS[0] }}
-                />
-                <span className="text-sm text-gray-600">
-                  Buchungsrechnungen
+                <div className="w-3 h-3 rounded-full mr-2 bg-primary-500" />
+                <span className="text-gray-600">
+                  Buchungsrechnungen: {formatCurrency(currentInvoice)}
+                  <span className="text-gray-400 ml-1">
+                    ({((currentInvoice / currentTotal) * 100).toFixed(1)}%)
+                  </span>
                 </span>
               </div>
               <div className="flex items-center">
-                <div 
-                  className="w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: COLORS[1] }}
-                />
-                <span className="text-sm text-gray-600">
-                  Nicht-Mitglieder
+                <div className="w-3 h-3 rounded-full mr-2 bg-gray-500" />
+                <span className="text-gray-600">
+                  Nicht-Mitglieder: {formatCurrency(currentNonMember)}
+                  <span className="text-gray-400 ml-1">
+                    ({((currentNonMember / currentTotal) * 100).toFixed(1)}%)
+                  </span>
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full mr-2 bg-yellow-500" />
+                <span className="text-gray-600">
+                  Sonstige (z.B. Beiträge): {formatCurrency(currentTotal - currentInvoice - currentNonMember)}
+                  <span className="text-gray-400 ml-1">
+                    ({(((currentTotal - currentInvoice - currentNonMember) / currentTotal) * 100).toFixed(1)}%)
+                  </span>
                 </span>
               </div>
             </div>
-          </motion.div>
+
+            {/* Historical Line Graph */}
+            <div className="mt-8">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-4">Historische Entwicklung</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart 
+                    data={chartData}
+                    margin={{ top: 5, right: 20, left: 20, bottom: 35 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorInvoices" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#007AFF" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#007AFF" stopOpacity={0.2}/>
+                      </linearGradient>
+                      <linearGradient id="colorNonMembers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#64748B" stopOpacity={0.2}/>
+                      </linearGradient>
+                      <linearGradient id="colorOthers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EAB308" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#EAB308" stopOpacity={0.2}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis 
+                      dataKey="month" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={60}
+                      interval={0}
+                      tick={{ fill: '#6B7280', fontSize: 12 }}
+                      axisLine={{ stroke: '#E5E7EB' }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tickFormatter={formatCurrency}
+                      tick={{ fill: '#6B7280', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "rgba(255, 255, 255, 0.95)",
+                        borderRadius: "0.75rem",
+                        padding: "0.75rem 1rem",
+                        border: "none",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                      }}
+                      formatter={(value, name) => {
+                        const label = {
+                          invoices: 'Buchungsrechnungen',
+                          nonMembers: 'Nicht-Mitglieder',
+                          others: 'Sonstige (z.B. Beiträge)'
+                        }[name];
+                        return [formatCurrency(value), label];
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="others"
+                      stackId="1"
+                      stroke="#EAB308"
+                      fill="url(#colorOthers)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="nonMembers"
+                      stackId="1"
+                      stroke="#64748B"
+                      fill="url(#colorNonMembers)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="invoices"
+                      stackId="1"
+                      stroke="#007AFF"
+                      fill="url(#colorInvoices)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     );
@@ -1546,24 +1487,19 @@ export default function MetricsDashboard({ initialData, onReset }) {
 
   function renderPlanDetail(subRows) {
     const plans = subRows.map((row) => {
-      // Get current value (end of period)
       const curr = getValue(row, allMonths.indexOf(endMonth));
+      const prev = startMonth !== endMonth 
+        ? getValue(row, allMonths.indexOf(startMonth))
+        : getValue(row, allMonths.indexOf(startMonth) - 1);
       
-      // Only calculate diff and percent for range mode
-      let diff = 0;
-      let percent = null;
-      if (startMonth !== endMonth) {
-        const prev = getValue(row, allMonths.indexOf(startMonth));
-        diff = curr - prev;
-        percent = prev === 0 ? (diff > 0 ? 100 : 0) : ((diff / prev) * 100).toFixed(1);
-      }
+      const diff = curr - prev;
+      const percent = prev === 0 ? (diff > 0 ? 100 : 0) : ((diff / prev) * 100).toFixed(1);
       
       return {
         planName: row.metric,
         currentVal: curr,
         diff,
-        percent,
-        isRange: startMonth !== endMonth
+        percent: parseFloat(percent)
       };
     });
 
@@ -1572,10 +1508,10 @@ export default function MetricsDashboard({ initialData, onReset }) {
       .sort((a, b) => b.currentVal - a.currentVal)
       .slice(0, 10);
 
-    // Sort by change and get top 10 (only in range mode)
-    const topByChange = startMonth !== endMonth 
-      ? [...plans].sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff)).slice(0, 10)
-      : topBySize;
+    // Sort by absolute change and get top 10
+    const topByChange = [...plans]
+      .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+      .slice(0, 10);
 
     return (
       <div className="mt-4">
@@ -1587,43 +1523,28 @@ export default function MetricsDashboard({ initialData, onReset }) {
               {topBySize.map((plan, idx) => (
                 <div key={idx} className="flex items-center justify-between text-sm">
                   <span className="font-medium text-gray-900">{plan.planName}</span>
-                  <div className="flex items-center gap-2">
-                    <span>{plan.currentVal.toLocaleString()}</span>
-                    {plan.isRange && (
-                      <span
-                        className={`font-medium ${
-                          plan.diff >= 0 ? "text-success-500" : "text-danger-500"
-                        }`}
-                      >
-                        {plan.diff >= 0 ? "+" : ""}{plan.diff} ({plan.percent}%)
-                      </span>
-                    )}
-                  </div>
+                  <span>{plan.currentVal.toLocaleString()}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Top 10 by Change - Only shown in range mode */}
+          {/* Top 10 by Change */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-4">
-              {startMonth !== endMonth ? "Top 10 nach Veränderung" : "Top 10 nach Größe"}
-            </h3>
+            <h3 className="font-medium text-gray-900 mb-4">Top 10 Veränderung Total</h3>
             <div className="space-y-2">
               {topByChange.map((plan, idx) => (
                 <div key={idx} className="flex items-center justify-between text-sm">
                   <span className="font-medium text-gray-900">{plan.planName}</span>
                   <div className="flex items-center gap-2">
                     <span>{plan.currentVal.toLocaleString()}</span>
-                    {plan.isRange && (
-                      <span
-                        className={`font-medium ${
-                          plan.diff >= 0 ? "text-success-500" : "text-danger-500"
-                        }`}
-                      >
-                        {plan.diff >= 0 ? "+" : ""}{plan.diff} ({plan.percent}%)
-                      </span>
-                    )}
+                    <span
+                      className={`font-medium ${
+                        plan.diff >= 0 ? "text-success-500" : "text-danger-500"
+                      }`}
+                    >
+                      {plan.diff >= 0 ? "+" : ""}{plan.diff} ({plan.percent}%)
+                    </span>
                   </div>
                 </div>
               ))}
@@ -1644,7 +1565,7 @@ export default function MetricsDashboard({ initialData, onReset }) {
       return renderNewMembersCard(metricObj);
     }
     if (metricObj.metric === TOTAL_CLAIM_KEY) {
-      return renderTotalClaimCard(metricObj);
+      return renderTotalClaimCard();
     }
     if (metricObj.metric === PLAN_KEY) {
       return renderPlanCard();
@@ -1681,9 +1602,16 @@ export default function MetricsDashboard({ initialData, onReset }) {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Mitglieder Metriken Dashboard
-          </h1>
+          <div className="flex items-center gap-4">
+            <img
+              src="/images/61b735a7129dde869ed6bdf8_kurabu-logo.svg"
+              alt="KURABU Logo"
+              className="w-32 h-auto object-contain"
+            />
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Vereinsbericht
+            </h1>
+          </div>
           <div className="flex items-center gap-4">
             <MonthSelector
               startMonth={startMonth}
@@ -1694,12 +1622,10 @@ export default function MetricsDashboard({ initialData, onReset }) {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => handleGenerateReport()}
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors"
-              disabled={!data.length || !startMonth || !endMonth}
+              onClick={() => window.print()}
+              className="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <HiOutlineDocumentDownload className="w-5 h-5 mr-2" />
-              PDF Report erstellen
+              Speichern / Drucken
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -1768,10 +1694,11 @@ export default function MetricsDashboard({ initialData, onReset }) {
           >
             {otherData
               .filter(m => m.metric === TOTAL_CLAIM_KEY)
-              .map((m) => renderTotalClaimCard(m))}
+              .map((m) => renderTotalClaimCard())}
           </motion.div>
         </motion.div>
       </div>
     </div>
   );
 }
+

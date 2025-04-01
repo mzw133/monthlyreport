@@ -68,30 +68,33 @@ export default function LandingPage({ onFileProcessed, onError }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
-      <div className="max-w-2xl w-full">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Mitglieder Metriken Dashboard
-          </h1>
-          <p className="text-lg text-gray-600">
-            Laden Sie Ihre Excel-Datei hoch, um die Mitgliederstatistiken zu analysieren
-          </p>
-        </motion.div>
+    <div 
+      className="min-h-screen bg-gray-50 relative flex items-center justify-center p-8"
+      style={{
+        backgroundImage: 'url(/images/background.png)',
+        backgroundSize: '80% auto',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Overlay für bessere Lesbarkeit */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(0px)'
+        }}
+      />
 
+      <div className="w-full max-w-xl relative z-10">
         <motion.div
+          className={`
+            border-2 border-dashed rounded-lg p-8 text-center
+            transition-colors duration-200 bg-white/90 backdrop-blur-sm
+            ${isDragging ? 'border-primary-500 bg-primary-50/90' : 'border-gray-300'}
+          `}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className={`border-2 border-dashed rounded-lg p-12 text-center ${
-            isDragging
-              ? 'border-primary-500 bg-primary-50'
-              : 'border-gray-300 hover:border-primary-500'
-          } transition-colors`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -99,7 +102,7 @@ export default function LandingPage({ onFileProcessed, onError }) {
           <div className="flex flex-col items-center">
             <HiOutlineDocumentText className="w-16 h-16 text-gray-400 mb-4" />
             <p className="text-lg text-gray-600 mb-4">
-              Ziehen Sie Ihre Excel-Datei hierher oder
+              KURABU Monatsbericht hier ablegen
             </p>
             <label className="relative">
               <motion.button
@@ -127,7 +130,7 @@ export default function LandingPage({ onFileProcessed, onError }) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg"
+            className="mt-4 p-4 bg-red-50/90 backdrop-blur-sm border border-red-200 rounded-lg"
           >
             <p className="text-red-600">{error}</p>
           </motion.div>
